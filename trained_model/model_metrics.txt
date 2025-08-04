@@ -1,0 +1,38 @@
+LEAD CONVERSION MODEL TRAINING METRICS
+==================================================
+
+Training Date: 2025-08-04T17:05:29.406023
+Data Size: 5000 records
+Number of Features: 4567
+
+MODEL CONFIGURATION:
+  n_estimators: 100
+  random_state: 42
+  max_depth: None
+  min_samples_split: 2
+  min_samples_leaf: 1
+
+PERFORMANCE METRICS:
+  Training Accuracy: 1.0000
+  Test Accuracy: 0.9620
+  Cross-Validation Accuracy (mean ± std): 0.9612 ± 0.0026
+
+CLASSIFICATION REPORT:
+  Precision (Class 0): 0.9964
+  Recall (Class 0): 0.9594
+  F1-Score (Class 0): 0.9776
+  Precision (Class 1): 0.7929
+  Recall (Class 1): 0.9781
+  F1-Score (Class 1): 0.8758
+
+TOP 10 MOST IMPORTANT FEATURES:
+   1. Intent Score: 0.3670
+   2. Downloads: 0.1325
+   3. Webinar Attended: 0.0575
+   4. Page Views: 0.0403
+   5. Company Size_Mid-Market: 0.0055
+   6. Company Size_Enterprise: 0.0054
+   7. Title_Product Manager: 0.0053
+   8. Company Size_Small Business: 0.0051
+   9. Industry_Retail: 0.0045
+  10. Industry_Manufacturing: 0.0043

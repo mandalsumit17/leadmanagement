@@ -334,6 +334,8 @@
         </div>
     </div>
 
+    <!-- Include the ML model JavaScript -->
+    <script src="ml_model.js"></script>
     <script src="app.js"></script>
     <script src="chatbot.js"></script>
     <script>
@@ -393,123 +395,7 @@
         });
       }
 
-      // --- Import Leads Auto Mapping ---
-      var leadsFileInput = document.getElementById('leadsFile');
-      var mappingSection = document.getElementById('mappingSection');
-      var mappingFields = document.getElementById('mappingFields');
-      var submitImportBtn = document.getElementById('submitImportBtn');
-      var importForm = document.getElementById('importForm');
-
-      // Expected fields for mapping
-      var expectedFields = [
-        { key: 'contact', label: 'Contact', variations: ['contact', 'name', 'full name'] },
-        { key: 'company', label: 'Company', variations: ['company', 'organization', 'business'] },
-        { key: 'title', label: 'Title', variations: ['title', 'job title', 'designation'] },
-        { key: 'industry', label: 'Industry', variations: ['industry', 'sector'] },
-        { key: 'companySize', label: 'Company Size', variations: ['company size', 'size', 'employees'] },
-        { key: 'intentScore', label: 'Page Views', variations: ['page views'] },
-        { key: 'email', label: 'Email', variations: ['email', 'email address'] },
-        { key: 'website', label: 'Website', variations: ['website', 'url', 'web'] }
-      ];
-
-      function normalize(str) {
-        return str.trim().toLowerCase().replace(/[_\- ]+/g, ' ');
-      }
-
-      function autoMapColumns(csvHeaders) {
-        var mapping = {};
-        expectedFields.forEach(field => {
-          var match = csvHeaders.find(h => field.variations.some(v => normalize(h) === normalize(v)));
-          mapping[field.key] = match || '';
-        });
-        return mapping;
-      }
-
-      function renderMappingFields(csvHeaders, mapping) {
-        mappingFields.innerHTML = '';
-        let allMapped = true;
-        expectedFields.forEach(field => {
-          var mappedCol = mapping[field.key];
-          var isMapped = mappedCol !== '';
-          if (!isMapped) allMapped = false;
-          var div = document.createElement('div');
-          div.className = 'form-group';
-          var label = document.createElement('label');
-          label.textContent = field.label + ' column:';
-          label.setAttribute('for', 'map_' + field.key);
-          div.appendChild(label);
-          if (isMapped) {
-            var input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'form-control';
-            input.value = mappedCol;
-            input.disabled = true;
-            input.id = 'map_' + field.key;
-            div.appendChild(input);
-          } else {
-            var select = document.createElement('select');
-            select.className = 'form-control';
-            select.id = 'map_' + field.key;
-            var opt = document.createElement('option');
-            opt.value = '';
-            opt.textContent = '-- Select --';
-            select.appendChild(opt);
-            csvHeaders.forEach(h => {
-              var option = document.createElement('option');
-              option.value = h;
-              option.textContent = h;
-              select.appendChild(option);
-            });
-            select.addEventListener('change', function() {
-              mapping[field.key] = select.value;
-              checkAllMapped();
-            });
-            div.appendChild(select);
-          }
-          mappingFields.appendChild(div);
-        });
-        checkAllMapped();
-      }
-
-      function checkAllMapped() {
-        var allMapped = expectedFields.every(field => {
-          var el = document.getElementById('map_' + field.key);
-          if (!el) return false;
-          if (el.tagName === 'INPUT') return el.value !== '';
-          if (el.tagName === 'SELECT') return el.value !== '';
-          return false;
-        });
-        submitImportBtn.classList.toggle('hidden', !allMapped);
-      }
-
-      if (leadsFileInput) {
-        leadsFileInput.addEventListener('change', function(e) {
-          var file = e.target.files[0];
-          if (!file) return;
-          var reader = new FileReader();
-          reader.onload = function(evt) {
-            var text = evt.target.result;
-            var lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
-            if (!lines.length) {
-              window.showAlert('CSV file is empty.', 'error');
-              return;
-            }
-            var headers = lines[0].split(',').map(h => h.trim());
-            var mapping = autoMapColumns(headers);
-            mappingSection.classList.remove('hidden');
-            renderMappingFields(headers, mapping);
-          };
-          reader.readAsText(file);
-        });
-      }
-
-      if (importForm) {
-        importForm.addEventListener('submit', function(e) {
-          // You can add logic here to use the mapping for actual import
-          // For now, just show a success message
-          window.showAlert('Leads imported successfully!', 'success');
-        });
-      }
+      // Import functionality is handled in app.js
     });
     </script>
 </body>
