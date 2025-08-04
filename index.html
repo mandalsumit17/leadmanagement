@@ -334,6 +334,8 @@
         </div>
     </div>
 
+    <!-- Include the ML model JavaScript -->
+    <script src="ml_model.js"></script>
     <script src="app.js"></script>
     <script src="chatbot.js"></script>
     <script>
@@ -348,8 +350,9 @@
         setTimeout(() => { bar.style.display = 'none'; }, 5000);
     };
 
-    // Custom Report Export: Prevent refresh and export CSV
+    // --- Auto Mapping for Import Leads ---
     document.addEventListener('DOMContentLoaded', function() {
+      // Custom Report Export
       var form = document.getElementById('customReportForm');
       if (form) {
         form.addEventListener('submit', function(e) {
@@ -391,6 +394,8 @@
           window.showAlert('Report exported!', 'success');
         });
       }
+
+      // Import functionality is handled in app.js
     });
     </script>
 </body>
