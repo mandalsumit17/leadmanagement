@@ -967,30 +967,30 @@ window.getLeadScoreFromAPI = async function(lead) {
         console.warn('JavaScript ML model failed, trying API fallback:', e.message);
     }
     
-    // Fallback to API if ML model is not available
-    const payload = {
-        'Title': lead.title,
-        'Industry': lead.industry,
-        'Company Size': lead.companySize,
-        'Page Views': lead.pageViews,
-        'Downloads': lead.downloads,
-        'Webinar Attended': lead.webinarAttended ? 1 : 0
-    };
-    try {
-        const res = await fetch('http://localhost:5000/score', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error(`ML API error: ${res.status}`);
-        console.log('Using Python API for scoring');
-        return await res.json();
-    } catch (e) {
-        console.warn('Both ML model and API unavailable, using rule-based fallback:', e.message);
-        // Fallback scoring when both ML model and API are unavailable
-        return generateFallbackScore(lead);
-    }
-};
+//     // Fallback to API if ML model is not available
+//     const payload = {
+//         'Title': lead.title,
+//         'Industry': lead.industry,
+//         'Company Size': lead.companySize,
+//         'Page Views': lead.pageViews,
+//         'Downloads': lead.downloads,
+//         'Webinar Attended': lead.webinarAttended ? 1 : 0
+//     };
+//     try {
+//         const res = await fetch('http://localhost:5000/score', {
+//             method: 'POST',
+//             headers: { 'Content-Type': 'application/json' },
+//             body: JSON.stringify(payload)
+//         });
+//         if (!res.ok) throw new Error(`ML API error: ${res.status}`);
+//         console.log('Using Python API for scoring');
+//         return await res.json();
+//     } catch (e) {
+//         console.warn('Both ML model and API unavailable, using rule-based fallback:', e.message);
+//         // Fallback scoring when both ML model and API are unavailable
+//         return generateFallbackScore(lead);
+//     }
+ };
 
 // Fallback scoring function when ML API is unavailable
 function generateFallbackScore(lead) {

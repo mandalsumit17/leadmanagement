@@ -1,7 +1,7 @@
 LEAD CONVERSION MODEL TRAINING METRICS
 ==================================================
 
-Training Date: 2025-08-04T17:05:29.406023
+Training Date: 2025-08-04T17:14:37.499547
 Data Size: 5000 records
 Number of Features: 4567
 
