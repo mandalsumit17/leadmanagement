@@ -255,9 +255,26 @@ function createLeadCard(lead) {
     const scoreBadge = getScoreBadge(lead.intentScore);
     const avatarColor = getAvatarColor(lead.id);
     const companyInitials = getCompanyInitials(lead.company);
+    
+    // Get feedback indicator for this lead
+    const feedback = getFeedbackForLead(lead.id);
+    let feedbackIndicator = '';
+    if (feedback && feedback.length > 0) {
+        const latestFeedback = feedback[feedback.length - 1];
+        const feedbackClass = latestFeedback.type === 'positive' ? 'positive' : 'negative';
+        const feedbackIcon = latestFeedback.type === 'positive' ? '👍' : '👎';
+        feedbackIndicator = `
+            <div class="feedback-indicator ${feedbackClass}" title="Latest feedback: ${latestFeedback.type} - ${latestFeedback.comment || 'No comment'}">
+                <span class="feedback-indicator-icon">${feedbackIcon}</span>
+                <span class="feedback-indicator-count">${feedback.length}</span>
+            </div>
+        `;
+    }
+    
     // Always show initials/abbreviation for all leads, never logo
     return `
         <div class="lead-card responsive-card" data-lead-id="${lead.id}" tabindex="0" role="region" aria-label="Lead card for ${lead.contact} at ${lead.company}">
+            ${feedbackIndicator}
             <div class="lead-header responsive-header">
                 <div class="company-avatar" style="background-color: ${avatarColor}" aria-hidden="true">
                     ${companyInitials}
@@ -591,8 +608,18 @@ function updateHotLeadsView() {
 }
 
 function showReasoning(leadId) {
+    console.log('showReasoning called with leadId:', leadId);
     const lead = leadsData.find(l => l.id === leadId);
-    if (!lead || !reasoningModal) return;
+    console.log('Found lead:', lead);
+    
+    if (!lead || !reasoningModal) {
+        console.error('Lead not found or modal not available', { lead, reasoningModal });
+        return;
+    }
+    
+    // Set current lead data for feedback system
+    currentLeadData = lead;
+    console.log('currentLeadData set to:', currentLeadData);
     
     const avatarColor = getAvatarColor(lead.id);
     const companyInitials = getCompanyInitials(lead.company);
@@ -604,6 +631,15 @@ function showReasoning(leadId) {
     const reasoningScore = document.getElementById('reasoningScore');
     const reasoningText = document.getElementById('reasoningText');
     const reasoningInsights = document.getElementById('reasoningInsights');
+    
+    console.log('Modal elements:', {
+        reasoningAvatar,
+        reasoningLeadName,
+        reasoningCompany,
+        reasoningScore,
+        reasoningText,
+        reasoningInsights
+    });
     
     if (reasoningAvatar) {
         reasoningAvatar.style.backgroundColor = avatarColor;
@@ -631,10 +667,12 @@ function showReasoning(leadId) {
     }
     
     // Show modal
+    console.log('Showing modal...');
     reasoningModal.classList.remove('hidden');
     reasoningModal.setAttribute('aria-modal', 'true');
     reasoningModal.setAttribute('role', 'dialog');
     reasoningModal.setAttribute('tabindex', '-1');
+    
     // Focus modal for accessibility
     setTimeout(() => {
         reasoningModal.focus();
@@ -642,8 +680,11 @@ function showReasoning(leadId) {
         const focusable = reasoningModal.querySelectorAll('button, [tabindex]:not([tabindex="-1"])');
         if (focusable.length) focusable[0].focus();
     }, 50);
+    
     // Prevent body scrolling when modal is open
     document.body.style.overflow = 'hidden';
+    
+    console.log('Modal should now be visible');
 }
 
 function hideReasoning() {
@@ -688,6 +729,8 @@ function switchView(targetViewId) {
         updateHotLeadsView();
     } else if (targetViewId === 'analyticsView') {
         renderAnalytics();
+    } else if (targetViewId === 'feedbackView') {
+        updateFeedbackUI();
     }
 }
 
@@ -911,11 +954,30 @@ function initializeApp() {
     
     // Global reasoning button event listener using event delegation
     document.addEventListener('click', function(e) {
+        console.log('Click detected on:', e.target, 'Classes:', e.target.classList);
+        
         if (e.target.classList.contains('reasoning-btn')) {
+            console.log('Reasoning button clicked!', e.target.dataset.leadId);
             e.preventDefault();
             e.stopPropagation();
             const leadId = parseInt(e.target.dataset.leadId);
             if (leadId) {
+                console.log('Showing reasoning for lead:', leadId);
+                showReasoning(leadId);
+            } else {
+                console.error('No leadId found on reasoning button');
+            }
+        }
+        
+        // Also check if the clicked element is inside a reasoning button
+        const reasoningBtn = e.target.closest('.reasoning-btn');
+        if (reasoningBtn && !e.target.classList.contains('reasoning-btn')) {
+            console.log('Click inside reasoning button detected');
+            e.preventDefault();
+            e.stopPropagation();
+            const leadId = parseInt(reasoningBtn.dataset.leadId);
+            if (leadId) {
+                console.log('Showing reasoning for lead (via closest):', leadId);
                 showReasoning(leadId);
             }
         }
@@ -927,10 +989,43 @@ function initializeApp() {
         importForm.setAttribute('data-initialized', 'true');
         initializeImportForm();
     }
+    
+    // Initialize feedback system
+    initializeFeedbackSystem();
 }
 
 // Wait for DOM to be fully loaded
-document.addEventListener('DOMContentLoaded', initializeApp);
+// Debug function to check for reasoning buttons
+function debugReasoningButtons() {
+    setTimeout(() => {
+        const allReasoningButtons = document.querySelectorAll('.reasoning-btn');
+        console.log('=== REASONING BUTTONS DEBUG ===');
+        console.log('Total reasoning buttons found:', allReasoningButtons.length);
+        
+        allReasoningButtons.forEach((btn, index) => {
+            console.log(`Button ${index + 1}:`, btn);
+            console.log('  - Lead ID:', btn.dataset.leadId);
+            console.log('  - Position:', btn.getBoundingClientRect());
+            console.log('  - Visible:', btn.offsetParent !== null);
+            console.log('  - Clickable area:', btn.offsetWidth, 'x', btn.offsetHeight);
+            
+            // Add a temporary red border to make it visible
+            btn.style.border = '3px solid red';
+            btn.style.boxShadow = '0 0 10px red';
+            
+            setTimeout(() => {
+                btn.style.border = '2px solid #0056b3';
+                btn.style.boxShadow = '0 4px 12px rgba(0, 123, 255, 0.4)';
+            }, 3000);
+        });
+        console.log('=== END DEBUG ===');
+    }, 2000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+    debugReasoningButtons();
+});
 
 // Make functions available globally if needed
 window.showReasoning = showReasoning;
@@ -1480,33 +1575,598 @@ function initializeImportForm() {
     });
 }
 
-// --- Feedback UI in Reasoning Modal ---
-(function() {
-    const modal = document.getElementById('reasoningModal');
-    if (!modal) return;
-    const feedbackDiv = document.createElement('div');
-    feedbackDiv.id = 'reasoningFeedback';
-    feedbackDiv.style = 'margin-top:16px;text-align:center;';
-    feedbackDiv.innerHTML = `
-        <span>Was this score accurate? </span>
-        <button id="feedbackYes" style="margin:0 8px;">👍</button>
-        <button id="feedbackNo">👎</button>
-        <span id="feedbackMsg" style="margin-left:12px;color:green;"></span>
+// --- Enhanced Feedback Management System ---
+
+// Feedback storage key
+const FEEDBACK_STORAGE_KEY = 'leadconnect_feedback';
+
+// Global feedback data
+let feedbackData = [];
+
+// Global feedback form state
+let currentFeedbackType = null;
+let currentLeadData = null;
+
+// Load feedback from localStorage
+function loadFeedbackData() {
+    try {
+        const stored = localStorage.getItem(FEEDBACK_STORAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            // Ensure feedbackData is always an array
+            feedbackData = Array.isArray(parsed) ? parsed : [];
+        } else {
+            feedbackData = [];
+        }
+    } catch (e) {
+        console.warn('Failed to load feedback data:', e);
+        feedbackData = [];
+    }
+    
+    // Double check to ensure feedbackData is an array
+    if (!Array.isArray(feedbackData)) {
+        console.warn('feedbackData is not an array, resetting to empty array');
+        feedbackData = [];
+    }
+}
+
+// Save feedback to localStorage
+function saveFeedbackData() {
+    try {
+        localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(feedbackData));
+    } catch (e) {
+        console.warn('Failed to save feedback data:', e);
+    }
+}
+
+// Get feedback for a specific lead
+function getFeedbackForLead(leadId) {
+    // Ensure feedbackData is always an array
+    if (!Array.isArray(feedbackData)) {
+        console.warn('feedbackData is not an array in getFeedbackForLead, resetting');
+        feedbackData = [];
+    }
+    return feedbackData.filter(f => f.leadId === leadId);
+}
+
+// Add new feedback
+function addFeedback(feedback) {
+    console.log('=== ADD FEEDBACK DEBUG ===');
+    console.log('Input feedback:', feedback);
+    
+    const newFeedback = {
+        id: Date.now() + Math.random(),
+        leadId: feedback.leadId,
+        leadName: feedback.leadName,
+        leadCompany: feedback.leadCompany,
+        originalScore: feedback.originalScore,
+        type: feedback.type, // 'positive' or 'negative'
+        comment: feedback.comment || '',
+        suggestedScore: feedback.suggestedScore || null,
+        influencingFactors: feedback.influencingFactors || [],
+        timestamp: new Date().toISOString(),
+        userAttribution: 'John Smith' // In real app, get from auth system
+    };
+    
+    console.log('Created feedback object:', newFeedback);
+    
+    // Ensure feedbackData is always an array before pushing
+    if (!Array.isArray(feedbackData)) {
+        console.warn('feedbackData is not an array in addFeedback, resetting');
+        feedbackData = [];
+    }
+    
+    feedbackData.push(newFeedback);
+    console.log('Feedback added to array. Total feedback count:', feedbackData.length);
+    
+    saveFeedbackData();
+    console.log('Feedback saved to localStorage');
+    
+    updateFeedbackUI();
+    console.log('Feedback UI updated');
+    
+    console.log('=== END ADD FEEDBACK DEBUG ===');
+    return newFeedback;
+}
+
+// Delete feedback
+function deleteFeedback(feedbackId) {
+    // Ensure feedbackData is always an array
+    if (!Array.isArray(feedbackData)) {
+        console.warn('feedbackData is not an array in deleteFeedback, resetting');
+        feedbackData = [];
+    }
+    feedbackData = feedbackData.filter(f => f.id !== feedbackId);
+    saveFeedbackData();
+    updateFeedbackUI();
+}
+
+// Clear all feedback
+function clearAllFeedback() {
+    if (confirm('Are you sure you want to clear all feedback? This action cannot be undone.')) {
+        feedbackData = [];
+        saveFeedbackData();
+        updateFeedbackUI();
+        showAlert('All feedback has been cleared.', 'success');
+    }
+}
+
+// Update feedback UI elements
+function updateFeedbackUI() {
+    updateFeedbackStats();
+    updateFeedbackFilters();
+    renderFeedbackList();
+    // Update lead cards to show feedback indicators
+    if (currentView === 'allLeadsView') {
+        updateAllLeadsView();
+    } else if (currentView === 'hotLeadsView') {
+        updateHotLeadsView();
+    }
+}
+
+// Update feedback statistics
+function updateFeedbackStats() {
+    // Ensure feedbackData is always an array
+    if (!Array.isArray(feedbackData)) {
+        console.warn('feedbackData is not an array in updateFeedbackStats, resetting');
+        feedbackData = [];
+    }
+    
+    const totalFeedback = feedbackData.length;
+    const positiveFeedback = feedbackData.filter(f => f.type === 'positive').length;
+    const negativeFeedback = feedbackData.filter(f => f.type === 'negative').length;
+    const accuracyRate = totalFeedback > 0 ? Math.round((positiveFeedback / totalFeedback) * 100) : 0;
+    
+    const positiveFeedbackCountEl = document.getElementById('positiveFeedbackCount');
+    const negativeFeedbackCountEl = document.getElementById('negativeFeedbackCount');
+    const totalFeedbackCountEl = document.getElementById('totalFeedbackCount');
+    const accuracyRateEl = document.getElementById('accuracyRate');
+    
+    if (positiveFeedbackCountEl) positiveFeedbackCountEl.textContent = positiveFeedback;
+    if (negativeFeedbackCountEl) negativeFeedbackCountEl.textContent = negativeFeedback;
+    if (totalFeedbackCountEl) totalFeedbackCountEl.textContent = totalFeedback;
+    if (accuracyRateEl) accuracyRateEl.textContent = `${accuracyRate}%`;
+}
+
+// Update feedback filters
+function updateFeedbackFilters() {
+    const feedbackLeadFilter = document.getElementById('feedbackLeadFilter');
+    if (!feedbackLeadFilter) return;
+    
+    // Ensure feedbackData is always an array
+    if (!Array.isArray(feedbackData)) {
+        console.warn('feedbackData is not an array in updateFeedbackFilters, resetting');
+        feedbackData = [];
+    }
+    
+    // Get unique leads that have feedback
+    const leadsWithFeedback = [...new Set(feedbackData.map(f => f.leadName))];
+    
+    // Clear and repopulate
+    feedbackLeadFilter.innerHTML = '<option value="">All Leads</option>';
+    leadsWithFeedback.forEach(leadName => {
+        const option = document.createElement('option');
+        option.value = leadName;
+        option.textContent = leadName;
+        feedbackLeadFilter.appendChild(option);
+    });
+}
+
+// Filter feedback based on current filters
+function filterFeedback() {
+    // Ensure feedbackData is always an array
+    if (!Array.isArray(feedbackData)) {
+        console.warn('feedbackData is not an array in filterFeedback, resetting');
+        feedbackData = [];
+    }
+    
+    const searchTerm = document.getElementById('feedbackSearchInput')?.value.toLowerCase() || '';
+    const typeFilter = document.getElementById('feedbackTypeFilter')?.value || '';
+    const leadFilter = document.getElementById('feedbackLeadFilter')?.value || '';
+    
+    return feedbackData.filter(feedback => {
+        const matchesSearch = !searchTerm || 
+            feedback.leadName.toLowerCase().includes(searchTerm) ||
+            feedback.leadCompany.toLowerCase().includes(searchTerm) ||
+            (feedback.comment && feedback.comment.toLowerCase().includes(searchTerm));
+        
+        const matchesType = !typeFilter || feedback.type === typeFilter;
+        const matchesLead = !leadFilter || feedback.leadName === leadFilter;
+        
+        return matchesSearch && matchesType && matchesLead;
+    });
+}
+
+// Render feedback list
+function renderFeedbackList() {
+    const container = document.getElementById('feedbackListContainer');
+    const countElement = document.getElementById('feedbackListCount');
+    
+    if (!container) return;
+    
+    const filteredFeedback = filterFeedback();
+    
+    if (countElement) {
+        countElement.textContent = filteredFeedback.length;
+    }
+    
+    if (filteredFeedback.length === 0) {
+        container.innerHTML = `
+            <div class="feedback-empty-state">
+                <div class="empty-icon">💬</div>
+                <h3>No feedback found</h3>
+                <p>No feedback matches your current filters. Try adjusting your search terms or filters.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Sort by most recent first
+    filteredFeedback.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    container.innerHTML = filteredFeedback.map(feedback => createFeedbackItem(feedback)).join('');
+}
+
+// Create feedback item HTML
+function createFeedbackItem(feedback) {
+    const date = new Date(feedback.timestamp);
+    const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    const typeClass = feedback.type === 'positive' ? 'positive' : 'negative';
+    const typeIcon = feedback.type === 'positive' ? '👍' : '👎';
+    const typeLabel = feedback.type === 'positive' ? 'Positive' : 'Negative';
+    
+    return `
+        <div class="feedback-item ${typeClass}" data-feedback-id="${feedback.id}">
+            <div class="feedback-item-header">
+                <div class="feedback-type-indicator">
+                    <span class="feedback-type-icon">${typeIcon}</span>
+                    <span class="feedback-type-label">${typeLabel}</span>
+                </div>
+                <div class="feedback-meta">
+                    <span class="feedback-date">${formattedDate}</span>
+                    <span class="feedback-user">${feedback.userAttribution}</span>
+                </div>
+                <button class="feedback-delete-btn" data-feedback-id="${feedback.id}" title="Delete feedback">
+                    🗑️
+                </button>
+            </div>
+            
+            <div class="feedback-item-content">
+                <div class="feedback-lead-info">
+                    <strong>${feedback.leadName}</strong> at ${feedback.leadCompany}
+                    <span class="feedback-score-info">
+                        Original Score: <strong>${feedback.originalScore}%</strong>
+                        ${feedback.suggestedScore ? `→ Suggested: <strong>${feedback.suggestedScore}%</strong>` : ''}
+                    </span>
+                </div>
+                
+                ${feedback.comment ? `
+                    <div class="feedback-comment">
+                        <strong>Comment:</strong> ${feedback.comment}
+                    </div>
+                ` : ''}
+                
+                ${feedback.influencingFactors && feedback.influencingFactors.length > 0 ? `
+                    <div class="feedback-factors">
+                        <strong>Influencing Factors:</strong> ${feedback.influencingFactors.join(', ')}
+                    </div>
+                ` : ''}
+            </div>
+        </div>
     `;
-    modal.querySelector('.modal-body').appendChild(feedbackDiv);
-    modal.addEventListener('click', function(e) {
-        if (e.target.id === 'feedbackYes' || e.target.id === 'feedbackNo') {
-            const isCorrect = e.target.id === 'feedbackYes';
-            const leadName = document.getElementById('reasoningLeadName').textContent;
-            const lead = leadsData.find(l => l.contact === leadName);
-            if (lead) {
-                fetch('http://localhost:5000/feedback', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...lead, correct: isCorrect })
-                });
-                document.getElementById('feedbackMsg').textContent = 'Thank you for your feedback!';
+}
+
+// Export feedback to CSV
+function exportFeedbackToCSV() {
+    const filteredFeedback = filterFeedback();
+    
+    if (filteredFeedback.length === 0) {
+        showAlert('No feedback to export.', 'error');
+        return;
+    }
+    
+    const headers = [
+        'Lead Name',
+        'Company',
+        'Original Score',
+        'Feedback Type',
+        'Suggested Score',
+        'Comment',
+        'Influencing Factors',
+        'User',
+        'Timestamp'
+    ];
+    
+    let csv = headers.join(',') + '\n';
+    
+    filteredFeedback.forEach(feedback => {
+        const row = [
+            feedback.leadName,
+            feedback.leadCompany,
+            feedback.originalScore,
+            feedback.type,
+            feedback.suggestedScore || '',
+            feedback.comment ? `"${feedback.comment.replace(/"/g, '""')}"` : '',
+            feedback.influencingFactors ? `"${feedback.influencingFactors.join(', ')}"` : '',
+            feedback.userAttribution,
+            feedback.timestamp
+        ];
+        csv += row.join(',') + '\n';
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leadconnect_feedback_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
+    
+    showAlert('Feedback exported successfully!', 'success');
+}
+
+// Initialize feedback system
+function initializeFeedbackSystem() {
+    // Reset any corrupted feedback data
+    try {
+        const stored = localStorage.getItem(FEEDBACK_STORAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (!Array.isArray(parsed)) {
+                console.warn('Corrupted feedback data detected, clearing localStorage');
+                localStorage.removeItem(FEEDBACK_STORAGE_KEY);
+            }
+        }
+    } catch (e) {
+        console.warn('Error checking feedback data, clearing localStorage:', e);
+        localStorage.removeItem(FEEDBACK_STORAGE_KEY);
+    }
+    
+    loadFeedbackData();
+    
+    // Feedback view controls
+    const feedbackSearchInput = document.getElementById('feedbackSearchInput');
+    const feedbackTypeFilter = document.getElementById('feedbackTypeFilter');
+    const feedbackLeadFilter = document.getElementById('feedbackLeadFilter');
+    const exportFeedbackBtn = document.getElementById('exportFeedbackBtn');
+    const clearAllFeedbackBtn = document.getElementById('clearAllFeedbackBtn');
+    
+    if (feedbackSearchInput) {
+        feedbackSearchInput.addEventListener('input', debounce(renderFeedbackList, 300));
+    }
+    
+    if (feedbackTypeFilter) {
+        feedbackTypeFilter.addEventListener('change', renderFeedbackList);
+    }
+    
+    if (feedbackLeadFilter) {
+        feedbackLeadFilter.addEventListener('change', renderFeedbackList);
+    }
+    
+    if (exportFeedbackBtn) {
+        exportFeedbackBtn.addEventListener('click', exportFeedbackToCSV);
+    }
+    
+    if (clearAllFeedbackBtn) {
+        clearAllFeedbackBtn.addEventListener('click', clearAllFeedback);
+    }
+    
+    // Enhanced feedback modal controls
+    initializeFeedbackModal();
+    
+    // Delete feedback event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('feedback-delete-btn')) {
+            const feedbackId = parseInt(e.target.dataset.feedbackId);
+            if (confirm('Are you sure you want to delete this feedback?')) {
+                deleteFeedback(feedbackId);
             }
         }
     });
-})();
+    
+    updateFeedbackUI();
+}
+
+// Initialize enhanced feedback modal
+function initializeFeedbackModal() {
+    const modal = document.getElementById('reasoningModal');
+    if (!modal) return;
+    
+    // Feedback buttons
+    const positiveBtn = document.getElementById('feedbackPositiveBtn');
+    const negativeBtn = document.getElementById('feedbackNegativeBtn');
+    const submitBtn = document.getElementById('submitFeedbackBtn');
+    const cancelBtn = document.getElementById('cancelFeedbackBtn');
+    const commentTextarea = document.getElementById('feedbackComment');
+    const suggestedScoreInput = document.getElementById('suggestedScore');
+    
+    if (positiveBtn) {
+        positiveBtn.addEventListener('click', function() {
+            console.log('Positive feedback button clicked');
+            currentFeedbackType = 'positive';
+            console.log('currentFeedbackType set to:', currentFeedbackType);
+            showFeedbackDetails();
+            updateFeedbackButtons();
+        });
+    } else {
+        console.warn('Positive feedback button not found');
+    }
+    
+    if (negativeBtn) {
+        negativeBtn.addEventListener('click', function() {
+            console.log('Negative feedback button clicked');
+            currentFeedbackType = 'negative';
+            console.log('currentFeedbackType set to:', currentFeedbackType);
+            showFeedbackDetails();
+            updateFeedbackButtons();
+        });
+    } else {
+        console.warn('Negative feedback button not found');
+    }
+    
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function() {
+            console.log('Submit button clicked!');
+            submitFeedback();
+        });
+    } else {
+        console.warn('Submit feedback button not found');
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            hideFeedbackDetails();
+            resetFeedbackForm();
+        });
+    }
+    
+    if (commentTextarea) {
+        commentTextarea.addEventListener('input', function() {
+            const charCount = this.value.length;
+            const charCountEl = this.parentNode.querySelector('.char-count');
+            if (charCountEl) {
+                charCountEl.textContent = `${charCount}/500 characters`;
+            }
+        });
+    }
+    
+    function showFeedbackDetails() {
+        const detailsSection = document.getElementById('feedbackDetailsSection');
+        if (detailsSection) {
+            detailsSection.style.display = 'block';
+        }
+    }
+    
+    function hideFeedbackDetails() {
+        const detailsSection = document.getElementById('feedbackDetailsSection');
+        if (detailsSection) {
+            detailsSection.style.display = 'none';
+        }
+    }
+    
+    function updateFeedbackButtons() {
+        if (positiveBtn) positiveBtn.classList.toggle('active', currentFeedbackType === 'positive');
+        if (negativeBtn) negativeBtn.classList.toggle('active', currentFeedbackType === 'negative');
+    }
+    
+    function resetFeedbackForm() {
+        currentFeedbackType = null;
+        currentLeadData = null;
+        if (commentTextarea) commentTextarea.value = '';
+        if (suggestedScoreInput) suggestedScoreInput.value = '';
+        hideFeedbackDetails();
+        updateFeedbackButtons();
+        
+        const successMsg = document.getElementById('feedbackSuccessMsg');
+        if (successMsg) successMsg.style.display = 'none';
+    }
+    
+    function submitFeedback() {
+        console.log('=== SUBMIT FEEDBACK DEBUG ===');
+        console.log('currentFeedbackType:', currentFeedbackType);
+        console.log('currentLeadData:', currentLeadData);
+        
+        if (!currentFeedbackType || !currentLeadData) {
+            console.error('Missing required data for feedback submission');
+            console.log('currentFeedbackType:', currentFeedbackType);
+            console.log('currentLeadData:', currentLeadData);
+            return;
+        }
+        
+        const comment = commentTextarea ? commentTextarea.value.trim() : '';
+        const suggestedScore = suggestedScoreInput ? parseInt(suggestedScoreInput.value) : null;
+        
+        console.log('Feedback data being submitted:');
+        console.log('- Comment:', comment);
+        console.log('- Suggested Score:', suggestedScore);
+        
+        const feedback = {
+            leadId: currentLeadData.id,
+            leadName: currentLeadData.contact,
+            leadCompany: currentLeadData.company,
+            originalScore: currentLeadData.intentScore,
+            type: currentFeedbackType,
+            comment: comment,
+            suggestedScore: suggestedScore
+        };
+        
+        console.log('Final feedback object:', feedback);
+        
+        addFeedback(feedback);
+        
+        // Show success message
+        hideFeedbackDetails();
+        const successMsg = document.getElementById('feedbackSuccessMsg');
+        if (successMsg) {
+            successMsg.style.display = 'block';
+            console.log('Success message shown');
+        } else {
+            console.warn('Success message element not found');
+        }
+        
+        // Reset form after delay
+        setTimeout(() => {
+            resetFeedbackForm();
+            console.log('Form reset completed');
+        }, 3000);
+        
+        showAlert('Feedback submitted successfully!', 'success');
+    }
+    
+    // Update current lead data when modal opens
+    window.setCurrentFeedbackLead = function(lead) {
+        currentLeadData = lead;
+        resetFeedbackForm();
+        
+        // Update feedback history for this lead
+        updateLeadFeedbackHistory(lead.id);
+    };
+}
+
+// Update feedback history for a specific lead
+function updateLeadFeedbackHistory(leadId) {
+    const historyContainer = document.getElementById('leadFeedbackHistoryList');
+    if (!historyContainer) return;
+    
+    const leadFeedback = getFeedbackForLead(leadId);
+    
+    if (leadFeedback.length === 0) {
+        historyContainer.innerHTML = '<p class="no-feedback">No previous feedback for this lead.</p>';
+        return;
+    }
+    
+    // Sort by most recent first
+    leadFeedback.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    historyContainer.innerHTML = leadFeedback.map(feedback => {
+        const date = new Date(feedback.timestamp);
+        const formattedDate = date.toLocaleDateString();
+        const typeIcon = feedback.type === 'positive' ? '👍' : '👎';
+        
+        return `
+            <div class="feedback-history-item ${feedback.type}">
+                <div class="feedback-history-header">
+                    <span class="feedback-type">${typeIcon}</span>
+                    <span class="feedback-date">${formattedDate}</span>
+                    <span class="feedback-user">${feedback.userAttribution}</span>
+                </div>
+                ${feedback.comment ? `<div class="feedback-comment">${feedback.comment}</div>` : ''}
+                ${feedback.suggestedScore ? `<div class="feedback-suggestion">Suggested: ${feedback.suggestedScore}%</div>` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// Update the showReasoning function to set current feedback lead
+const originalShowReasoning = window.showReasoning;
+window.showReasoning = function(leadId) {
+    const lead = leadsData.find(l => l.id === leadId);
+    if (lead && window.setCurrentFeedbackLead) {
+        window.setCurrentFeedbackLead(lead);
+    }
+    return originalShowReasoning(leadId);
+};

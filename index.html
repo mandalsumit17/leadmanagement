@@ -49,6 +49,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="#" class="nav-link" data-target="feedbackView">
+                            <span class="nav-icon">💬</span>
+                            Feedback
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="#" class="nav-link" data-target="importLeadsView">
                             <span class="nav-icon">⬆️</span>
                             Import Leads
@@ -277,6 +283,94 @@
                 </div>
             </div>
 
+            <!-- Feedback View -->
+            <div id="feedbackView" class="content-view hidden">
+                <header class="dashboard-header">
+                    <div class="header-left">
+                        <h1>Feedback Management Dashboard</h1>
+                        <p>Comprehensive feedback analysis and management system</p>
+                    </div>
+                    <div class="header-right">
+                        <div class="user-info">
+                            <div class="user-avatar">JS</div>
+                            <div class="user-details">
+                                <span class="user-name">John Smith</span>
+                                <span class="user-role">Sales Manager</span>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Feedback Statistics Overview -->
+                <section class="feedback-stats-section">
+                    <div class="feedback-stats-container">
+                        <div class="feedback-stat-card">
+                            <div class="stat-icon positive">👍</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="positiveFeedbackCount">0</div>
+                                <div class="stat-label">Positive Feedback</div>
+                            </div>
+                        </div>
+                        <div class="feedback-stat-card">
+                            <div class="stat-icon negative">👎</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="negativeFeedbackCount">0</div>
+                                <div class="stat-label">Negative Feedback</div>
+                            </div>
+                        </div>
+                        <div class="feedback-stat-card">
+                            <div class="stat-icon total">💬</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="totalFeedbackCount">0</div>
+                                <div class="stat-label">Total Feedback</div>
+                            </div>
+                        </div>
+                        <div class="feedback-stat-card">
+                            <div class="stat-icon accuracy">🎯</div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="accuracyRate">0%</div>
+                                <div class="stat-label">Accuracy Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Feedback Controls -->
+                <section class="feedback-controls-section">
+                    <div class="feedback-controls-container">
+                        <div class="search-container">
+                            <input type="text" id="feedbackSearchInput" class="form-control search-input" placeholder="Search feedback by lead name or comment...">
+                        </div>
+                        <div class="filter-controls">
+                            <select id="feedbackTypeFilter" class="form-control filter-select">
+                                <option value="">All Feedback Types</option>
+                                <option value="positive">Positive (👍)</option>
+                                <option value="negative">Negative (👎)</option>
+                            </select>
+                            <select id="feedbackLeadFilter" class="form-control filter-select">
+                                <option value="">All Leads</option>
+                            </select>
+                            <button id="exportFeedbackBtn" class="btn btn--primary">
+                                <span>📥</span> Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Feedback List -->
+                <section class="feedback-list-section">
+                    <div class="feedback-list-header">
+                        <h2>Feedback History (<span id="feedbackListCount">0</span>)</h2>
+                        <button id="clearAllFeedbackBtn" class="btn btn--outline">
+                            <span>🗑️</span> Clear All
+                        </button>
+                    </div>
+                    <div id="feedbackListContainer" class="feedback-list-container">
+                        <!-- Feedback items will be dynamically rendered here -->
+                    </div>
+                </section>
+            </div>
+
             <!-- Import Leads View -->
             <div id="importLeadsView" class="content-view hidden">
                 <div style="padding: var(--space-32); max-width: 600px; margin: auto;">
@@ -328,6 +422,173 @@
                     <div class="key-factors">
                         <h6>Key Factors:</h6>
                         <ul id="reasoningInsights"></ul>
+                    </div>
+                    
+                    <!-- Enhanced Feedback Section -->
+                    <div class="feedback-section">
+                        <h6>Provide Feedback on This Score</h6>
+                        <div class="feedback-buttons">
+                            <button type="button" class="feedback-btn positive" id="feedbackPositiveBtn" title="Score is accurate">
+                                <span class="feedback-icon">👍</span>
+                                <span class="feedback-text">Accurate</span>
+                            </button>
+                            <button type="button" class="feedback-btn negative" id="feedbackNegativeBtn" title="Score is inaccurate">
+                                <span class="feedback-icon">👎</span>
+                                <span class="feedback-text">Inaccurate</span>
+                            </button>
+                        </div>
+                        
+                        <div class="feedback-details" id="feedbackDetailsSection" style="display: none;">
+                            <div class="form-group">
+                                <label for="feedbackComment" class="form-label">Comment (Optional)</label>
+                                <textarea 
+                                    id="feedbackComment" 
+                                    class="form-control" 
+                                    rows="3" 
+                                    placeholder="Explain why you think this score is accurate or inaccurate..."
+                                    maxlength="500"
+                                ></textarea>
+                                <small class="char-count">0/500 characters</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="suggestedScore" class="form-label">Suggested Score (0-100)</label>
+                                <input 
+                                    type="number" 
+                                    id="suggestedScore" 
+                                    class="form-control" 
+                                    min="0" 
+                                    max="100" 
+                                    placeholder="Enter your suggested score"
+                                >
+                            </div>
+                            
+                            <div class="feedback-actions">
+                                <button type="button" class="btn btn--primary" id="submitFeedbackBtn">
+                                    Submit Feedback
+                                </button>
+                                <button type="button" class="btn btn--outline" id="cancelFeedbackBtn">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="feedback-success" id="feedbackSuccessMsg" style="display: none;">
+                            <div class="success-icon">✅</div>
+                            <div class="success-text">Thank you for your feedback! It helps improve our AI scoring accuracy.</div>
+                        </div>
+                        
+                        <!-- Feedback History for this Lead -->
+                        <div class="lead-feedback-history" id="leadFeedbackHistory">
+                            <h6>Previous Feedback for this Lead</h6>
+                            <div class="feedback-history-list" id="leadFeedbackHistoryList">
+                                <!-- Previous feedback will be rendered here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Feedback Modal -->
+    <div id="feedbackModal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content feedback-modal-content">
+            <div class="modal-header">
+                <h3>Detailed Feedback</h3>
+                <button class="modal-close" id="closeFeedbackModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="feedback-lead-info">
+                    <div class="feedback-avatar" id="feedbackAvatar"></div>
+                    <div class="feedback-details-info">
+                        <h4 id="feedbackLeadName"></h4>
+                        <p id="feedbackCompany"></p>
+                    </div>
+                    <div class="feedback-score-info">
+                        <div class="score-value" id="feedbackScore"></div>
+                        <div class="score-label">Current Score</div>
+                    </div>
+                </div>
+                
+                <div class="feedback-form">
+                    <div class="feedback-type-selection">
+                        <h5>How accurate is this score?</h5>
+                        <div class="feedback-type-buttons">
+                            <button type="button" class="feedback-type-btn positive" data-type="positive">
+                                <span class="icon">👍</span>
+                                <span class="label">Accurate</span>
+                                <small>Score reflects lead quality well</small>
+                            </button>
+                            <button type="button" class="feedback-type-btn negative" data-type="negative">
+                                <span class="icon">👎</span>
+                                <span class="label">Inaccurate</span>
+                                <small>Score doesn't match lead quality</small>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="feedback-form-fields" id="feedbackFormFields" style="display: none;">
+                        <div class="form-group">
+                            <label for="detailedComment" class="form-label">Detailed Comments</label>
+                            <textarea 
+                                id="detailedComment" 
+                                class="form-control" 
+                                rows="4" 
+                                placeholder="Please explain your reasoning in detail..."
+                                maxlength="1000"
+                            ></textarea>
+                            <small class="char-count">0/1000 characters</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="alternativeScore" class="form-label">What should the score be? (0-100)</label>
+                            <input 
+                                type="range" 
+                                id="alternativeScore" 
+                                class="score-slider" 
+                                min="0" 
+                                max="100" 
+                                value="50"
+                            >
+                            <div class="score-display">
+                                <span id="scoreDisplay">50</span>%
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Which factors influenced your assessment?</label>
+                            <div class="factor-checkboxes">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" value="engagement"> Website engagement
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" value="company_size"> Company size
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" value="industry"> Industry relevance
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" value="title"> Job title seniority
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" value="timing"> Purchase timing
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" value="other"> Other factors
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="feedback-actions">
+                        <button type="button" class="btn btn--primary" id="submitDetailedFeedback" disabled>
+                            Submit Detailed Feedback
+                        </button>
+                        <button type="button" class="btn btn--outline" id="cancelDetailedFeedback">
+                            Cancel
+                        </button>
                     </div>
                 </div>
             </div>

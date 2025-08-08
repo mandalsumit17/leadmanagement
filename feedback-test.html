@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #22c55e;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .test-result.pass {
+            background: #dcfce7;
+            border-left: 4px solid #22c55e;
+        }
+        .test-result.fail {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+        }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Feedback System Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Instructions</h2>
+        <p>This page will help you test all the enhanced feedback system features:</p>
+        
+        <div class="test-result">
+            <strong>✅ Features to Test:</strong>
+            <ul>
+                <li><strong>Feedback Navigation:</strong> Click "💬 Feedback" in the sidebar</li>
+                <li><strong>Lead Card Indicators:</strong> Look for feedback badges on lead cards</li>
+                <li><strong>Reasoning Modal:</strong> Click info button (ℹ️) on any lead card</li>
+                <li><strong>Quick Feedback:</strong> Use 👍/👎 buttons in the modal</li>
+                <li><strong>Detailed Feedback:</strong> Fill out comment and suggested score</li>
+                <li><strong>Feedback Dashboard:</strong> View statistics and feedback list</li>
+                <li><strong>Search & Filter:</strong> Test search and filter functionality</li>
+                <li><strong>Export Feature:</strong> Download feedback as CSV</li>
+                <li><strong>Delete Feedback:</strong> Remove individual feedback items</li>
+                <li><strong>Responsive Design:</strong> Test on different screen sizes</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Quick Test Actions</h2>
+        <p>Click these buttons to quickly test different aspects:</p>
+        
+        <button class="btn" onclick="window.open('http://localhost:8000', '_blank')">
+            🚀 Open Main Application
+        </button>
+        
+        <button class="btn" onclick="testLocalStorage()">
+            💾 Test Data Storage
+        </button>
+        
+        <button class="btn" onclick="simulateFeedback()">
+            📝 Simulate Test Feedback
+        </button>
+        
+        <button class="btn" onclick="clearTestData()">
+            🗑️ Clear Test Data
+        </button>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test Results</h2>
+        <div id="testResults">
+            <p>Click the test buttons above to see results here...</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Manual Testing Checklist</h2>
+        <div class="test-result">
+            <strong>User Interface Tests:</strong>
+            <ul>
+                <li>☐ Feedback navigation item appears in sidebar</li>
+                <li>☐ Feedback dashboard loads with statistics</li>
+                <li>☐ Lead cards show feedback indicators</li>
+                <li>☐ Reasoning modal opens with feedback section</li>
+                <li>☐ Feedback buttons respond to clicks</li>
+                <li>☐ Form fields accept input correctly</li>
+                <li>☐ Success messages appear after submission</li>
+                <li>☐ Feedback list displays submitted items</li>
+                <li>☐ Search functionality works</li>
+                <li>☐ Filter dropdown functions correctly</li>
+                <li>☐ Export button downloads CSV file</li>
+                <li>☐ Delete buttons remove feedback items</li>
+            </ul>
+        </div>
+        
+        <div class="test-result">
+            <strong>Data Persistence Tests:</strong>
+            <ul>
+                <li>☐ Feedback survives page refresh</li>
+                <li>☐ Statistics update correctly</li>
+                <li>☐ Lead indicators persist</li>
+                <li>☐ Search results are accurate</li>
+                <li>☐ CSV export contains correct data</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function testLocalStorage() {
+            const results = document.getElementById('testResults');
+            let output = '<h3>🔍 LocalStorage Test Results:</h3>';
+            
+            try {
+                // Test basic storage
+                localStorage.setItem('test_key', 'test_value');
+                const retrieved = localStorage.getItem('test_key');
+                localStorage.removeItem('test_key');
+                
+                if (retrieved === 'test_value') {
+                    output += '<div class="test-result pass">✅ LocalStorage read/write: PASS</div>';
+                } else {
+                    output += '<div class="test-result fail">❌ LocalStorage read/write: FAIL</div>';
+                }
+                
+                // Check for existing feedback data
+                const feedbackData = localStorage.getItem('leadconnect_feedback');
+                if (feedbackData) {
+                    const parsed = JSON.parse(feedbackData);
+                    output += `<div class="test-result pass">✅ Feedback data found: ${parsed.length} items</div>`;
+                } else {
+                    output += '<div class="test-result">ℹ️ No existing feedback data found</div>';
+                }
+                
+                // Check for leads data
+                const leadsData = localStorage.getItem('leadconnect_leads');
+                if (leadsData) {
+                    const parsed = JSON.parse(leadsData);
+                    output += `<div class="test-result pass">✅ Leads data found: ${parsed.length} items</div>`;
+                } else {
+                    output += '<div class="test-result">ℹ️ No existing leads data found</div>';
+                }
+                
+            } catch (error) {
+                output += `<div class="test-result fail">❌ LocalStorage error: ${error.message}</div>`;
+            }
+            
+            results.innerHTML = output;
+        }
+        
+        function simulateFeedback() {
+            const results = document.getElementById('testResults');
+            let output = '<h3>📝 Simulating Test Feedback:</h3>';
+            
+            try {
+                // Create sample feedback data
+                const testFeedback = [
+                    {
+                        id: Date.now() + 1,
+                        leadId: 1,
+                        leadName: "Sarah Chen",
+                        leadCompany: "TechFlow Solutions",
+                        originalScore: 92,
+                        type: "positive",
+                        comment: "Score accurately reflects high engagement and senior title",
+                        suggestedScore: null,
+                        influencingFactors: ["engagement", "title"],
+                        timestamp: new Date().toISOString(),
+                        userAttribution: "Test User"
+                    },
+                    {
+                        id: Date.now() + 2,
+                        leadId: 2,
+                        leadName: "Dr. Michael Rodriguez",
+                        leadCompany: "MedCore Healthcare",
+                        originalScore: 88,
+                        type: "negative",
+                        comment: "Score seems too high for initial contact",
+                        suggestedScore: 75,
+                        influencingFactors: ["timing", "industry"],
+                        timestamp: new Date().toISOString(),
+                        userAttribution: "Test User"
+                    }
+                ];
+                
+                // Store test feedback
+                localStorage.setItem('leadconnect_feedback', JSON.stringify(testFeedback));
+                
+                output += '<div class="test-result pass">✅ Test feedback data created successfully</div>';
+                output += `<div class="test-result pass">✅ Added ${testFeedback.length} feedback items</div>`;
+                output += '<div class="test-result">ℹ️ Refresh the main application to see the test data</div>';
+                
+            } catch (error) {
+                output += `<div class="test-result fail">❌ Error creating test feedback: ${error.message}</div>`;
+            }
+            
+            results.innerHTML = output;
+        }
+        
+        function clearTestData() {
+            const results = document.getElementById('testResults');
+            let output = '<h3>🗑️ Clearing Test Data:</h3>';
+            
+            try {
+                localStorage.removeItem('leadconnect_feedback');
+                localStorage.removeItem('test_key');
+                
+                output += '<div class="test-result pass">✅ Test feedback data cleared</div>';
+                output += '<div class="test-result">ℹ️ Refresh the main application to see the changes</div>';
+                
+            } catch (error) {
+                output += `<div class="test-result fail">❌ Error clearing data: ${error.message}</div>`;
+            }
+            
+            results.innerHTML = output;
+        }
+        
+        // Auto-run storage test on load
+        window.addEventListener('load', function() {
+            setTimeout(testLocalStorage, 1000);
+        });
+    </script>
+</body>
+</html>
